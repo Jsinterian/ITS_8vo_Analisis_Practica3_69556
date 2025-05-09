@@ -7,6 +7,10 @@ import Button from "../ui/button/Button";
 import { useForm } from "react-hook-form";
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { AuthServiceImpl } from "../../../infrastructure/services/AuthServiceImpl";
+import { LoginUseCase } from "../../../core/useCases/LoginUseCase";
+import { useNavigate } from "react-router-dom";
+
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,6 +19,8 @@ export default function SignInForm() {
     email: "",
     password: "",
   }
+  const navigate = useNavigate();
+
 
   const form = useForm({
     defaultValues: defaultValues,
@@ -26,9 +32,21 @@ export default function SignInForm() {
     )
   })
 
-  const handleSubmit = (data: unknown) => {
-    console.log(data)
+  const handleSubmit = async (data: { email: string, password: string }) => {
+    const authService = new AuthServiceImpl();
+    const loginUseCase = new LoginUseCase(authService);
+
+    const user = await loginUseCase.execute(data.email, data.password);
+    if (user) {
+      alert('Login successful');
+      localStorage.setItem('token', user.token);
+      navigate("/dashboard");
+    } else {
+      alert('Login failed');
+    }
   }
+  
+ 
 
   return (
     <div className="flex flex-col flex-1">
@@ -52,7 +70,7 @@ export default function SignInForm() {
             </p>
           </div>
           <div>
-            <form>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
               <div className="space-y-6">
                 <div>
                   <Label>
